@@ -9,13 +9,16 @@
 </head>
 <body>
 	<div class="navbar">
-		<input type="text" placeholder="First name" class="firstName">
-		<input type="text" placeholder="Last name" class="lastName">
-		<input type="text" placeholder="Email" class="email">
-		<button>Register</button>
-		<button>Sign In</button>
+		<div class="currentUser"></div>
+		<form class="accountInput">
+			<input type="text" placeholder="First name" class="firstName">
+			<input type="text" placeholder="Last name" class="lastName">
+			<input type="text" placeholder="Email" class="email">
+			<button type="submit">Register</button>
+			<button type="submit">Sign In</button>
+		</form>
 	</div>
-	<div class="posts"></div>
+	<ul class="posts"></ul>
 	<script src="./index.js" type="module"></script>
 </body>
 </html>
