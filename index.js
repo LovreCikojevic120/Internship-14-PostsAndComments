@@ -69,5 +69,5 @@ postForm.addEventListener('click', e => {
   }
 })
 
-infiniteScroll('post', true);
+infiniteScroll('post', false, true);
 searchPosts();

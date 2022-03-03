@@ -143,17 +143,17 @@ async function navigator(){
 
   allPosts.addEventListener('click', e => {
     e.preventDefault();
-    infiniteScroll('post', true);
+    infiniteScroll('post', true, true);
   });
 
   myPosts.addEventListener('click', e => {
     e.preventDefault();
-    infiniteScroll(`user/${currentUser.id}/post`, true);
+    infiniteScroll(`user/${currentUser.id}/post`, true, true);
   });
   
   myComments.addEventListener('click', e => {
     e.preventDefault();
-    infiniteScroll(`user/${currentUser.id}/comment`, false);
+    infiniteScroll(`user/${currentUser.id}/comment`, true, false);
   });
 }
 
