@@ -60,18 +60,25 @@ function printPosts(postData){
     `;
   }	
 
-  listenPosts();
+  listenPosts(postsDiv);
 }
 
-function listenPosts(){
-  document.querySelector('.posts').addEventListener('click', e => {
+function listenPosts(postsDiv){
+  postsDiv.addEventListener('click', e => {
+      let postId;
 
       const post = e.target.parentElement.parentElement;
-      const postId = post.querySelector('.postId').textContent;
+      if(post)
+        postId = post.querySelector('.postId').textContent;
 
       switch(e.target.className){
         case 'viewComments':
-          getComments(`post/${postId}/comment`, false, post);
+          if(e.target.textContent === 'Vidi komentare'){
+            e.target.textContent = 'Sakrij komentare';
+            getComments(`post/${postId}/comment`, false, post);
+            break;
+          }
+          removePostComments(post, e.target);
           break;
         case 'like':
           likePost(post);
@@ -86,6 +93,14 @@ function listenPosts(){
           break;
       }
   });
+}
+
+function removePostComments(post, button){
+  button.textContent = 'Vidi komentare';
+  let comments = post.querySelector('.comments');
+  while (comments.firstChild) {
+    comments.removeChild(comments.firstChild);
+}
 }
 
 function awakePostEditor(post){
@@ -103,13 +118,13 @@ function awakePostEditor(post){
   }
 
   post.innerHTML = `
-  <form class="accountInput">
+  <form class="post-editor">
     <input type="file" accept="image/png, image/jpg" class="image_input">
     <img src="" width="50px" height="50px" class="newPostImg">
     <input type="text" class="newDesc" value="${description}">
     <input type="text" class="newTags" value="${tags}">
-    <button type="submit">Edit</button>
-    <button type="submit">Cancel</button>
+    <button type="submit" class="post-edit">Edit</button>
+    <button type="submit" class="post-edit-cancel">Cancel</button>
   </form>
   `;
 
@@ -128,7 +143,7 @@ function awakePostEditor(post){
 
   post.addEventListener('click', e => {
     e.preventDefault();
-    if(e.target.textContent === 'Edit'){
+    if(e.target.className === 'post-edit'){
       let text = post.querySelector('.newDesc').value;
       let newTags = post.querySelector('.newTags').value;
 
@@ -142,7 +157,7 @@ function awakePostEditor(post){
         post.querySelector('.tags').textContent = res.tags;
       });
     }
-    if(e.target.textContent === 'Cancel'){
+    if(e.target.className === 'post-edit-cancel'){
       post.innerHTML = postData;
     }
   });

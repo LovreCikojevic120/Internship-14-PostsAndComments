@@ -44,6 +44,7 @@ input[type='file'] {
 
 .navbar{
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   margin: 30px 10px;
   padding-bottom: 30px;
@@ -52,6 +53,7 @@ input[type='file'] {
 
 .currentUser{
   display: flex;
+  flex-wrap: wrap;
 }
 
 .currentUser > img{
@@ -62,10 +64,12 @@ input[type='file'] {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  margin-left: 30px;
 }
 
 .user__action{
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   margin-left: 30px;
 }
@@ -119,7 +123,7 @@ input[type='file'] {
 
 .post__image{
   border-radius: 20px;
-  width: 30%;
+  max-width: 40%;
 }
 
 .post__info{

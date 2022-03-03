@@ -29,27 +29,14 @@ postForm.addEventListener('click', e => {
   let description = postForm.querySelector('.newPostDesc').value;
   let tags = postForm.querySelector('.newPostTags').value;
   let error = postForm.querySelector('.errorMsg');
-  const preview = document.querySelector('.newPostImg');
-  const file = document.querySelector('.image_input');
+  const preview = postForm.querySelector('.newPostImg');
+  const file = postForm.querySelector('.image_input');
   const reader = new FileReader();
-
-  if(!currentUser.id){
-    error.textContent = 'Not signed in';
-    setTimeout(() => error.textContent = '', 3000);
-    return;
-  }
-
-  if(!description || !tags){
-    error.textContent = 'Some fields are empty';
-    setTimeout(() => error.textContent = '', 3000);
-    return;
-  }
 
   if(e.target.className === 'image_input'){
     file.addEventListener('change', function(){
       reader.addEventListener("load", function() {
         preview.src = reader.result;
-        preview.style.display = "inline-block";
       }, false);
   
       if(file)
@@ -59,6 +46,18 @@ postForm.addEventListener('click', e => {
 
   if(e.target.textContent === 'Post'){
     e.preventDefault();
+
+    if(!currentUser.id){
+      error.textContent = 'Not signed in';
+      setTimeout(() => error.textContent = '', 3000);
+      return;
+    }
+  
+    if(!description || !tags || !preview.src){
+      error.textContent = 'Some fields are empty';
+      setTimeout(() => error.textContent = '', 3000);
+      return;
+    }
 
     createPost({
       'text': description,
@@ -70,5 +69,5 @@ postForm.addEventListener('click', e => {
   }
 })
 
-infiniteScroll('post', true, true);
+infiniteScroll('post', true);
 searchPosts();

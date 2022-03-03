@@ -34,7 +34,7 @@ async function register(){
       printUser(res);
     }
     else{
-      error.textContent = 'User already exsists';
+      error.textContent = 'User already exsists or invalid input';
       setTimeout(() => error.textContent = '', 3000);
     }
   });
@@ -53,8 +53,13 @@ async function signIn(){
     return;
   }
 
-  let users = await getAllUsers();
-  let user = users.find(u => u.firstName === firstName && u.lastName === lastName);
+  let user = await findUser(firstName, lastName);
+
+  if(!user){
+    error.textContent = 'User doesnt exsist';
+    setTimeout(() => error.textContent = '', 3000);
+    return;
+  }
   
   if(user){
     await fetch(`https://dummyapi.io/data/v1/user/${user.id}`,{
@@ -72,8 +77,8 @@ async function signIn(){
   }
 }
 
-async function getAllUsers(){
-  let pages = 0,users = [];
+async function findUser(firstName, lastName){
+  let pages = 0, user;
 
   await fetch(`https://dummyapi.io/data/v1/user`,{
       headers:{
@@ -82,8 +87,13 @@ async function getAllUsers(){
     })
     .then(response => response.json())
     .then(res => {
-      pages = parseInt(res.total / 20);
-      res.data.forEach(e => users.push(e));
+      pages = parseInt(res.total / res.limit);
+      res.data.forEach(e => {
+        if(e.firstName === firstName && e.lastName === lastName){
+          user = e;
+          return user;
+        }
+      });
     });
 
     while(pages !== 0){
@@ -95,10 +105,15 @@ async function getAllUsers(){
       .then(response => response.json())
       .then(res => {
         pages--;
-        res.data.forEach(e => users.push(e));
+        res.data.forEach(e => {
+          if(e.firstName === firstName && e.lastName === lastName){
+            user = e;
+            return user;
+          }
+        });
       });
     }
-    return users;
+    return user;
 }
 
 function printUser(){
@@ -128,17 +143,17 @@ async function navigator(){
 
   allPosts.addEventListener('click', e => {
     e.preventDefault();
-    infiniteScroll('post', true, true);
+    infiniteScroll('post', true);
   });
 
   myPosts.addEventListener('click', e => {
     e.preventDefault();
-    infiniteScroll(`user/${currentUser.id}/post`, true, true);
+    infiniteScroll(`user/${currentUser.id}/post`, true);
   });
   
   myComments.addEventListener('click', e => {
     e.preventDefault();
-    infiniteScroll(`user/${currentUser.id}/comment`, true, false);
+    infiniteScroll(`user/${currentUser.id}/comment`, false);
   });
 }
 

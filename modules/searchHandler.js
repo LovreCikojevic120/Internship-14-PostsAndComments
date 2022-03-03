@@ -8,10 +8,11 @@ function searchPosts(){
     let searchResultArray = [];
     
     for(let post of helpArray){
+      console.log(post.tags);
       if(post.tags.some(t => t.includes(`${keyWord.value}`)))
         searchResultArray.push(post);
     }
-    
+
     if(searchResultArray.length === 0){
       printPosts(helpArray);
       return;

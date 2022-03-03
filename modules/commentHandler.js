@@ -72,7 +72,8 @@ function listenComments(commentsDiv){
 
     switch(e.target.className){
       case 'postComment':
-        postComment(comment.parentElement, e.target)
+        console.log(comment);
+        postComment(comment.parentElement, comment)
         break;
       case 'delete-comment':
         deleteComment(comment);
@@ -153,38 +154,31 @@ async function deleteComment(comment){
 function awakeCommentEditor(comment){
   const commentId = comment.querySelector('.commentId').textContent;
   let description = comment.querySelector('.desc').textContent;
-  const ownerId = comment.querySelector('.commentOwnerId').textContent;
-  let error = comment.querySelector('.errorMsg');
   let commentData = comment.innerHTML;
-
-  if(!isUserResource(ownerId) || !currentUser.id){
-    error.textContent = 'Not signed in or not your comment';
-    setTimeout(() => error.textContent = '', 3000);
-    return;
-  }
 
   comment.innerHTML = `
   <form class="accountInput">
     <input type="text" class="newDesc" value="${description}">
-    <button type="submit">Edit</button>
-    <button type="submit">Cancel</button>
+    <button type="submit" class="edit-comment-btn">Edit</button>
+    <button type="submit" class="cancel-edit-comment-btn">Cancel</button>
   </form>
   `;
 
   comment.addEventListener('click', e => {
-    if(e.target.textContent === 'Edit'){
+    if(e.target.className === 'edit-comment-btn'){
       e.preventDefault();
 
       let text = comment.querySelector('.newDesc');
 
       editComment(commentId, {
-        'message': text.value,
+        'message': text.value
       }).then(res => {
         comment.innerHTML = commentData;
-        comment.querySelector('.desc').textContent = res.message;
+        console.log(res);
+        comment.querySelector('.desc').textContent = text.value;
       });
     }
-    if(e.target.textContent === 'Cancel'){
+    if(e.target.className === 'cancel-edit-comment-btn'){
       e.preventDefault();
       comment.innerHTML = commentData;
     };
@@ -201,7 +195,7 @@ async function editComment(commentId, dataObject){
     body: JSON.stringify(dataObject)
 	})
 	.then(response => response.json());
-
+  console.log(updatedComment);
   return updatedComment;
 }
 
