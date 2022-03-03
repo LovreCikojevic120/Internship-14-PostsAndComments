@@ -16,9 +16,26 @@
 			<input type="text" placeholder="Email" class="email">
 			<button type="submit">Register</button>
 			<button type="submit">Sign In</button>
+			<div class="errorMsg"></div>
+		</form>
+	</div>
+	<div class="post_header">
+		<div class="search-bar">
+			<input type="text" placeholder="Search posts by tag..." class="search-bar__input">
+		</div>
+		<form class="postInput">
+			<h2 class="createPostTitle">Create post</h2>
+			<label for="new-post-image"></label>
+			<input type="file" name="new-post-image" accept="image/png, image/jpg" class="image_input">
+			<img src="" width="50px" height="50px" class="newPostImg">
+			<input type="text" placeholder="Description..." class="newPostDesc">
+			<input type="text" placeholder="Tags" class="newPostTags">
+			<div class="errorMsg"></div>
+			<button type="submit">Post</button>
 		</form>
 	</div>
 	<ul class="posts"></ul>
+	<ul class="userComments"></ul>
 	<script src="./index.js" type="module"></script>
 </body>
 </html>

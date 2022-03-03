@@ -1,14 +1,16 @@
-const currentUser = {};
+let currentUser = {};
+let appId = '621f966f4448e407b601cc04';
 
-async function getUserResource(resourceType ,resourceId){
-  const resource = await fetch(`https://dummyapi.io/data/v1/${resourceType}/${resourceId}`,{
-		headers:{
-			'app-id': '621278657c4302234016b3af'
-		}
-	})
-	.then(response => response.json());
-
-  return resource.owner.email === currentUser.email ? true : false;
+function setCurrentUser(user){
+  currentUser = user;
 }
 
-export {currentUser, getUserPost};
+function setAppId(newId){
+	appId = newId;
+}
+
+function isUserResource(ownerId){
+  return ownerId === currentUser.id ? true : false;
+}
+
+export {currentUser, setCurrentUser, isUserResource, appId, setAppId};

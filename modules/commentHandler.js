@@ -1,57 +1,208 @@
-async function getComments(post){
-  const postId = post.querySelector('.postId').textContent;
+import { appId, currentUser, isUserResource } from "./currentUserInformation.js";
+import { helpArray, setHelpArray } from "./utils.js";
 
-	const comments = await fetch(`https://dummyapi.io/data/v1/post/${postId}/comment`,{
+async function getComments(link, savePreviousData, postTarget){
+  await fetch(`https://dummyapi.io/data/v1/${link}`,{
+        headers:{
+          'app-id': appId,
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(res => {
+        if(!res.data){
+          setHelpArray([]);
+          return;
+        }
+        if(savePreviousData)
+          res.data.forEach(element => helpArray.push(element));
+        else setHelpArray(res.data);
+      }).then(() => printComments(postTarget, helpArray));
+}
+
+async function postComment(post, comment){
+  let error = comment.querySelector('.errorMsg');
+  const postId = post.querySelector('.postId').textContent;
+  const commentText = post.querySelector('.newComment').value;
+
+  if(!currentUser.id || commentText === ''){
+    error.textContent = 'Not signed in';
+    setTimeout(() => error.textContent = '', 3000);
+    return;
+  }
+
+	const newComment = await fetch(`https://dummyapi.io/data/v1/comment/create`,{
+    method: 'POST',
 		headers:{
-			'app-id': '621278657c4302234016b3af'
-		}
+			'app-id': appId,
+      'Content-Type': 'application/json'
+		},
+    body: JSON.stringify({
+      'message': commentText,
+      'owner': currentUser.id,
+      'post': postId
+    })
 	})
 	.then(response => response.json());
 
-  printComments(post, comments.data);
+  post.querySelector('.comments').innerHTML += `
+    <li class="comment">
+    <div class="comment__info">
+      <p class="desc">${newComment.message}</p>
+      <p>Autor:</p>
+      <p>${newComment.owner.firstName} ${newComment.owner.lastName}</p>
+      <p>Objavljeno:</p>
+      <p>${newComment.publishDate}</p>
+    </div>
+    <div class="comment__action">
+      <div class="errorMsg"></div>
+      <div class="commentId" style="display: none;">${newComment.id}</div>
+      <div class="commentOwnerId" style="display: none;">${newComment.owner.id}</div>
+      <button class="delete-comment">Izbrisi</button>
+      <button class="edit-comment">Uredi</button>
+    </div>
+  </li>
+  `;
 }
 
-function listenComments(){
-  document.querySelector('.comments').addEventListener('click', e => {
-    if(e.target.tagName === 'BUTTON'){
+function listenComments(commentsDiv){
+  commentsDiv.addEventListener('click', e => {
 
-      const post = e.target.parentElement.parentElement;
+    const comment = e.target.parentElement.parentElement;
 
-      switch(e.target.className){
-        case 'delete':
-          deleteComment(post);
-          break;
-        case 'edit':
-          editComment();
-          break;
-      }
+    switch(e.target.className){
+      case 'postComment':
+        postComment(comment.parentElement, e.target)
+        break;
+      case 'delete-comment':
+        deleteComment(comment);
+        break;
+      case 'edit-comment':
+        awakeCommentEditor(comment);
+        break;
     }
   });
 }
 
 function printComments(post, commentData){
-  let commentsDiv = post.querySelector('.comments');
-  commentsDiv.textContent = 'Comments:';
+  let commentsDiv;
 
-  for(let entry of commentData){
-    commentsDiv.innerHTML += `
-    <li class="comment">
-      <div class="comment__info">
-        <p>${entry.message}</p>
-        <p>${entry.owner.firstName} ${entry.owner.lastName}</p>
-        <p>${entry.publishDate}</p>
-      </div>
-      <div class="comment__action">
-        <div class="errorMsg"></div>
-        <div class="commentId" style="display: none;">${entry.id}</div>
-        <button class="delete">Izbrisi</button>
-        <button class="edit">Uredi</button>
-      </div>
-    </li>
-    `;
+  if(!post){
+    commentsDiv = document.querySelector('.posts');
+    commentsDiv.innerHTML = '';
+  }
+  else{
+    commentsDiv = post.querySelector('.comments');
+    commentsDiv.innerHTML = `
+        <div class="new-comment-form">
+          <input type="text" placeholder="Komentiraj..." class="newComment">
+          <div class="errorMsg"></div>
+          <button class="postComment">Pošalji</button>
+        </div>
+      `;
   }
 
-  listenComments();
+  if(commentData){
+    for(let entry of commentData){
+      commentsDiv.innerHTML += `
+      <li class="comment">
+        <div class="comment__info">
+          <p class="desc">${entry.message}</p>
+          <p>Autor:</p>
+          <p>${entry.owner.firstName} ${entry.owner.lastName}</p>
+          <p>Objavljeno:</p>
+          <p>${entry.publishDate}</p>
+        </div>
+        <div class="comment__action">
+          <div class="errorMsg"></div>
+          <div class="commentId" style="display: none;">${entry.id}</div>
+          <div class="commentOwnerId" style="display: none;">${entry.owner.id}</div>
+          <button class="delete-comment">Izbrisi</button>
+          <button class="edit-comment">Uredi</button>
+        </div>
+      </li>
+      `;
+    }
+  }
+
+  listenComments(commentsDiv);
 }
 
-export {getComments};
+async function deleteComment(comment){
+  const commentId = comment.querySelector('.commentId').textContent;
+  const ownerId = comment.querySelector('.commentOwnerId').textContent;
+  let error = comment.querySelector('.errorMsg');
+
+  if(!isUserResource(ownerId) || !currentUser.id){
+    error.textContent = 'Not signed in or not your comment';
+    setTimeout(() => error.textContent = '', 3000);
+    return;
+  }
+
+  await fetch(`https://dummyapi.io/data/v1/comment/${commentId}`,{
+    method: 'DELETE',
+		headers:{
+			'app-id': appId,
+      'Content-Type': 'application/json'
+		}
+	})
+	.then(response => response.json())
+  .then(()=>comment.remove());
+}
+
+function awakeCommentEditor(comment){
+  const commentId = comment.querySelector('.commentId').textContent;
+  let description = comment.querySelector('.desc').textContent;
+  const ownerId = comment.querySelector('.commentOwnerId').textContent;
+  let error = comment.querySelector('.errorMsg');
+  let commentData = comment.innerHTML;
+
+  if(!isUserResource(ownerId) || !currentUser.id){
+    error.textContent = 'Not signed in or not your comment';
+    setTimeout(() => error.textContent = '', 3000);
+    return;
+  }
+
+  comment.innerHTML = `
+  <form class="accountInput">
+    <input type="text" class="newDesc" value="${description}">
+    <button type="submit">Edit</button>
+    <button type="submit">Cancel</button>
+  </form>
+  `;
+
+  comment.addEventListener('click', e => {
+    if(e.target.textContent === 'Edit'){
+      e.preventDefault();
+
+      let text = comment.querySelector('.newDesc');
+
+      editComment(commentId, {
+        'message': text.value,
+      }).then(res => {
+        comment.innerHTML = commentData;
+        comment.querySelector('.desc').textContent = res.message;
+      });
+    }
+    if(e.target.textContent === 'Cancel'){
+      e.preventDefault();
+      comment.innerHTML = commentData;
+    };
+  });
+}
+
+async function editComment(commentId, dataObject){
+  const updatedComment = await fetch(`https://dummyapi.io/data/v1/comment/${commentId}`,{
+    method: 'PUT',
+		headers:{
+			'app-id': appId,
+      'Content-Type': 'application/json'
+		},
+    body: JSON.stringify(dataObject)
+	})
+	.then(response => response.json());
+
+  return updatedComment;
+}
+
+export { printComments, getComments };

@@ -1,75 +1,151 @@
-import {currentUser} from './currentUserInformation.js';
+import {currentUser, setCurrentUser, appId} from './currentUserInformation.js';
+import { infiniteScroll } from './utils.js';
 
 async function register(){
 
-  let firstName = document.querySelector('.firstName');
-  let lastName = document.querySelector('.lastName');
-  let email = document.querySelector('.email');
+  let firstName = document.querySelector('.firstName').value;
+  let lastName = document.querySelector('.lastName').value;
+  let email = document.querySelector('.email').value;
+  const accountForm = document.querySelector('.accountInput');
+  let error = accountForm.querySelector('.errorMsg');
 
-  let user = await fetch(`https://dummyapi.io/data/v1/user/create`,{
+  if(!firstName || !lastName || !email){
+    error.textContent = 'Some fields are empty';
+    setTimeout(() => error.textContent = '', 3000);
+    return;
+  }
+
+  await fetch(`https://dummyapi.io/data/v1/user/create`,{
     method:'POST',
 		headers:{
-			'app-id': '621278657c4302234016b3af',
+			'app-id': appId,
       'Content-Type': 'application/json'
 		},
     body: JSON.stringify({
-      firstName: firstName.value,
-      lastName: lastName.value,
-      email: email.value
+      'firstName': firstName,
+      'lastName': lastName,
+      'email': email
     })
 	})
-	.then(response => response.json());
-
-  if(user){
-    currentUser = user;
-    printUser(user);
-  }
+	.then(response => response.json())
+  .then(res => {
+    if(!res.error){
+      setCurrentUser(res);
+      printUser(res);
+    }
+    else{
+      error.textContent = 'User already exsists';
+      setTimeout(() => error.textContent = '', 3000);
+    }
+  });
 }
 
 async function signIn(){
+  let firstName = document.querySelector('.firstName').value;
+  let lastName = document.querySelector('.lastName').value;
+  let email = document.querySelector('.email').value;
+  const accountForm = document.querySelector('.accountInput');
+  let error = accountForm.querySelector('.errorMsg');
 
-  let firstName = document.querySelector('.firstName');
-  let lastName = document.querySelector('.lastName');
-  let email = document.querySelector('.email');
-  
-    let users = await fetch(`https://dummyapi.io/data/v1/user`,{
-      headers:{
-        'app-id': '621278657c4302234016b3af',
-      }
-    })
-    .then(response => response.json());
-
-    let user = users.data.find(u => u.firstName === firstName.value 
-      && u.lastName === lastName.value && u.email === email.value);
-
-    if(user){
-      currentUser = user;
-      printUser(user);
-    }
+  if(!firstName || !lastName || !email){
+    error.textContent = 'Some fields are empty';
+    setTimeout(() => error.textContent = '', 3000);
+    return;
   }
 
-function printUser(user){
+  let users = await getAllUsers();
+  let user = users.find(u => u.firstName === firstName && u.lastName === lastName);
+  
+  if(user){
+    await fetch(`https://dummyapi.io/data/v1/user/${user.id}`,{
+      headers:{
+        'app-id': appId,
+      }
+    })
+    .then(response => response.json())
+    .then(res => {
+      if(res.email === email){
+        setCurrentUser(res);
+        printUser();
+      }
+    });
+  }
+}
+
+async function getAllUsers(){
+  let pages = 0,users = [];
+
+  await fetch(`https://dummyapi.io/data/v1/user`,{
+      headers:{
+        'app-id': appId,
+      }
+    })
+    .then(response => response.json())
+    .then(res => {
+      pages = parseInt(res.total / 20);
+      res.data.forEach(e => users.push(e));
+    });
+
+    while(pages !== 0){
+      await fetch(`https://dummyapi.io/data/v1/user?page=${pages}`,{
+        headers:{
+          'app-id': appId,
+        }
+      })
+      .then(response => response.json())
+      .then(res => {
+        pages--;
+        res.data.forEach(e => users.push(e));
+      });
+    }
+    return users;
+}
+
+function printUser(){
   let userInfoDiv = document.querySelector('.currentUser');
 
-  userInfoDiv.innerHTML += `
-  <img src="${user.picture}" alt="Insert image">
+  userInfoDiv.innerHTML = `
+  <img src="${currentUser.picture}" alt="Insert image">
   <div class="user__info">
-    <p>${user.firstName}</p>
-    <p>${user.lastName}</p>
-    <p>${user.id}</p>
+    <p>${currentUser.firstName}</p>
+    <p>${currentUser.lastName}</p>
+    <p>${currentUser.id}</p>
   </div>
   <div class="user__action">
-    <button class="viewPosts">Objave</button>
-    <button class="viewComments">Komentari</button>
+    <button class="viewAllPosts">Sve objave</button>
+    <button class="viewPosts">Moje objave</button>
+    <button class="viewComments">Moji komentari</button>
   </div>
   `;
 
   updateAccountWindow();
 }
 
+async function navigator(){
+  let allPosts = document.querySelector('.viewAllPosts');
+  let myPosts = document.querySelector('.viewPosts');
+  let myComments = document.querySelector('.viewComments');
+
+  allPosts.addEventListener('click', e => {
+    e.preventDefault();
+    infiniteScroll('post', true, true);
+  });
+
+  myPosts.addEventListener('click', e => {
+    e.preventDefault();
+    infiniteScroll(`user/${currentUser.id}/post`, true, true);
+  });
+  
+  myComments.addEventListener('click', e => {
+    e.preventDefault();
+    infiniteScroll(`user/${currentUser.id}/comment`, true, false);
+  });
+}
+
 function updateAccountWindow(){
   let form = document.querySelector('.accountInput');
-  
+  navigator();
+
   for(let child of form)
     child.style.display = 'none';
   
@@ -86,7 +162,7 @@ function updateAccountWindow(){
     while (user.firstChild)
       user.removeChild(user.firstChild);
     
-    currentUser = {};
+    setCurrentUser({});
   })
 }
 

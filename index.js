@@ -1,19 +1,23 @@
-import { getPosts } from "./modules/postHandler.js";
+import { createPost } from "./modules/postHandler.js";
 import {register, signIn} from './modules/accountHandler.js';
+import { setAppId, currentUser } from './modules/currentUserInformation.js'
+import { infiniteScroll } from "./modules/utils.js";
+import { searchPosts } from "./modules/searchHandler.js";
 
-let pageCounter = 0;
-let currentUser = {};
 let accountForm = document.querySelector('.accountInput');
+let postForm = document.querySelector('.postInput');
+
+setAppId(prompt('Unesi app id za dummy API:'));
 
 accountForm.addEventListener('click', e => {
   e.preventDefault();
 
   switch(e.target.textContent){
     case 'Register':
-      currentUser = register();
+      register();
       break;
     case 'Sign In':
-      currentUser = signIn();
+      signIn();
       break;
     case 'Sign Out':
       signOut();
@@ -21,13 +25,50 @@ accountForm.addEventListener('click', e => {
   }
 });
 
-getPosts(pageCounter);
-pageCounter++;
+postForm.addEventListener('click', e => {
+  let description = postForm.querySelector('.newPostDesc').value;
+  let tags = postForm.querySelector('.newPostTags').value;
+  let error = postForm.querySelector('.errorMsg');
+  const preview = document.querySelector('.newPostImg');
+  const file = document.querySelector('.image_input');
+  const reader = new FileReader();
 
-window.addEventListener('scroll',()=>{
-	const {scrollHeight,scrollTop,clientHeight} = document.documentElement;
-	if(scrollTop + clientHeight > scrollHeight - 5){
-		getPosts(pageCounter);
-    pageCounter++;
+  if(!currentUser.id){
+    error.textContent = 'Not signed in';
+    setTimeout(() => error.textContent = '', 3000);
+    return;
   }
-});
+
+  if(!description || !tags){
+    error.textContent = 'Some fields are empty';
+    setTimeout(() => error.textContent = '', 3000);
+    return;
+  }
+
+  if(e.target.className === 'image_input'){
+    file.addEventListener('change', function(){
+      reader.addEventListener("load", function() {
+        preview.src = reader.result;
+        preview.style.display = "inline-block";
+      }, false);
+  
+      if(file)
+        reader.readAsDataURL(file.files[0]);
+    });
+  }
+
+  if(e.target.textContent === 'Post'){
+    e.preventDefault();
+
+    createPost({
+      'text': description,
+      'image': file.files[0].name,
+      'likes': '0',
+      'tags': [tags],
+      'owner': currentUser.id
+    });
+  }
+})
+
+infiniteScroll('post', true, true);
+searchPosts();
